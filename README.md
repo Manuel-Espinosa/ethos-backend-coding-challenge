@@ -86,20 +86,12 @@ Construir un MVP de una API para backoffice aplicando mejores prácticas de desa
 
 ## 📊 Criterios de Evaluación
 
-  
-
 | Categoría | Descripción |
-
 |-----------|-------------|
-
-| **Cumplimiento Funcional** | El proyecto cumple con todas las funcionalidades listadas en el alcance |
-
+| **Cumplimiento Funcional** | El proyecto cumple con todas las pantallas y funcionalidades listadas en el alcance |
 | **Arquitectura y Código Limpio** | Implementación correcta de la Arquitectura Hexagonal. Código bien estructurado, legible y con separación de responsabilidades |
-
 | **Proceso de Desarrollo (Git)** | Uso de branches, commits atomicos y descriptivos y Pull Requests bien documentados. Entre más modularizado el desarrollo, mejor evaluación |
-
 | **Stack Tecnológico (Bonus)** | Uso de Supabase y Elysia será considerado como valor agregado |
-
 | **Extra Points** | Funcionalidad extra, documentación excepcional, tests, etc. |
 
   
