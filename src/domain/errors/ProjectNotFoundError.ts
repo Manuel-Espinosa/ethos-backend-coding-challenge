@@ -1,4 +1,4 @@
-import { DomainError } from './DomainError.js';
+import { DomainError } from './DomainError';
 
 export class ProjectNotFoundError extends DomainError {
   constructor(message: string = 'Project not found') {

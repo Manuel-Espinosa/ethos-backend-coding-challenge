@@ -1,9 +1,5 @@
 export class Email {
-  private readonly value: string;
-
-  private constructor(email: string) {
-    this.value = email;
-  }
+  private constructor(private readonly _value: string) {}
 
   static create(email: string): Email {
     const normalized = email.toLowerCase().trim();
@@ -21,11 +17,15 @@ export class Email {
     return emailRegex.test(email);
   }
 
+  get value(): string {
+    return this._value;
+  }
+
   toString(): string {
-    return this.value;
+    return this._value;
   }
 
   equals(other: Email): boolean {
-    return this.value === other.value;
+    return this._value === other._value;
   }
 }
