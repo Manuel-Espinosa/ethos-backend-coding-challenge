@@ -18,10 +18,7 @@ export class CreateUserUseCase {
       throw new DomainError('Email already in use');
     }
 
-    const hashedPasswordValue = await password.hash();
-    const hashedPassword = Password.create(hashedPasswordValue);
-
-    const user = await User.create(email, request.name, hashedPassword);
+    const user = await User.create(email, request.name, password);
 
     await this.userRepository.save(user);
 
