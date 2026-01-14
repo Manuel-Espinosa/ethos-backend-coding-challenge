@@ -37,17 +37,11 @@ export interface IUserRepository {
    */
   save(user: User): Promise<User>;
 
-  /**
-   * Delete a user by their ID
-   * @param id - The user's ID
-   * @returns True if deleted, false if not found
-   */
   delete(id: UserId): Promise<boolean>;
 
-  /**
-   * Check if a user with the given email exists
-   * @param email - The email to check
-   * @returns True if exists, false otherwise
-   */
+  hardDelete(id: UserId): Promise<boolean>;
+
+  findDeletedByEmail(email: Email): Promise<User | null>;
+
   existsByEmail(email: Email): Promise<boolean>;
 }

@@ -22,6 +22,11 @@ export class RegisterUseCase {
       throw new DomainError('Email already in use');
     }
 
+    const deletedUser = await this.userRepository.findDeletedByEmail(email);
+    if (deletedUser) {
+      await this.userRepository.hardDelete(deletedUser.id);
+    }
+
     const user = await User.create(email, request.name, password);
 
     await this.userRepository.save(user);
