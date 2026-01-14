@@ -18,6 +18,8 @@ describe('RegisterUseCase', () => {
       findAll: jest.fn() as any,
       save: jest.fn() as any,
       delete: jest.fn() as any,
+      hardDelete: jest.fn() as any,
+      findDeletedByEmail: jest.fn() as any,
       existsByEmail: jest.fn() as any,
     };
 
@@ -41,6 +43,7 @@ describe('RegisterUseCase', () => {
       const token = 'jwt-token-123';
 
       (mockUserRepository.existsByEmail as any).mockResolvedValue(false);
+      (mockUserRepository.findDeletedByEmail as any).mockResolvedValue(null);
       (mockUserRepository.save as any).mockImplementation(async (user: User) => user);
       (mockTokenService.generateToken as any).mockReturnValue(token);
 
@@ -126,8 +129,9 @@ describe('RegisterUseCase', () => {
       };
 
       (mockUserRepository.existsByEmail as any).mockResolvedValue(false);
+      (mockUserRepository.findDeletedByEmail as any).mockResolvedValue(null);
 
-      
+
       await expect(registerUseCase.execute(request))
         .rejects.toThrow('User name cannot be empty');
 
@@ -145,6 +149,7 @@ describe('RegisterUseCase', () => {
 
       let savedUser: any;
       (mockUserRepository.existsByEmail as any).mockResolvedValue(false);
+      (mockUserRepository.findDeletedByEmail as any).mockResolvedValue(null);
       (mockUserRepository.save as any).mockImplementation(async (user: User) => {
         savedUser = user;
         return user;

@@ -81,6 +81,32 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
+  async hardDelete(id: UserId): Promise<boolean> {
+    try {
+      await this.prisma.user.delete({
+        where: { id: id.toString() },
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async findDeletedByEmail(email: Email): Promise<User | null> {
+    const prismaUser = await this.prisma.user.findFirst({
+      where: {
+        email: email.value,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!prismaUser) {
+      return null;
+    }
+
+    return UserMapper.toDomain(prismaUser);
+  }
+
   async existsByEmail(email: Email): Promise<boolean> {
     const count = await this.prisma.user.count({
       where: {

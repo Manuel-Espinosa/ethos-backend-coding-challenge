@@ -16,6 +16,8 @@ describe('GetAllUsersUseCase', () => {
       findAll: jest.fn() as any,
       save: jest.fn() as any,
       delete: jest.fn() as any,
+      hardDelete: jest.fn() as any,
+      findDeletedByEmail: jest.fn() as any,
       existsByEmail: jest.fn() as any,
     };
 
