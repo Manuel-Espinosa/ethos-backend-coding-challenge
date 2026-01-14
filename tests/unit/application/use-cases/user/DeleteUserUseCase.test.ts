@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { DeleteUserUseCase } from '../../../../../src/application/use-cases/user/DeleteUserUseCase';
 import { IUserRepository } from '../../../../../src/domain/repositories/IUserRepository';
+import { User } from '../../../../../src/domain/entities/User';
+import { Email } from '../../../../../src/domain/value-objects/Email';
 import { UserId } from '../../../../../src/domain/value-objects/UserId';
 import { UserNotFoundError } from '../../../../../src/domain/errors/UserNotFoundError';
 
@@ -22,25 +24,39 @@ describe('DeleteUserUseCase', () => {
   });
 
   describe('execute', () => {
-    it('should successfully delete a user', async () => {
+    it('should successfully soft delete a user', async () => {
       const userId = UserId.generate();
+      const user = User.reconstitute(
+        userId,
+        Email.create('user@example.com'),
+        'Test User',
+        'hashedPassword',
+        new Date(),
+        new Date(),
+        null
+      );
 
-      (mockUserRepository.delete as any).mockResolvedValue(true);
+      (mockUserRepository.findById as any).mockResolvedValue(user);
+      (mockUserRepository.save as any).mockResolvedValue(user);
 
       await deleteUserUseCase.execute({ id: userId.toString() });
 
-      expect(mockUserRepository.delete).toHaveBeenCalledWith(userId);
+      expect(mockUserRepository.findById).toHaveBeenCalledWith(userId);
+      expect(mockUserRepository.save).toHaveBeenCalledWith(user);
+      expect(user.isDeleted()).toBe(true);
+      expect(user.deletedAt).not.toBeNull();
     });
 
     it('should throw UserNotFoundError when user does not exist', async () => {
       const userId = UserId.generate();
 
-      (mockUserRepository.delete as any).mockResolvedValue(false);
+      (mockUserRepository.findById as any).mockResolvedValue(null);
 
       await expect(deleteUserUseCase.execute({ id: userId.toString() }))
         .rejects.toThrow(UserNotFoundError);
 
-      expect(mockUserRepository.delete).toHaveBeenCalledWith(userId);
+      expect(mockUserRepository.findById).toHaveBeenCalledWith(userId);
+      expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
 
     it('should throw error for invalid user id format', async () => {
@@ -49,7 +65,8 @@ describe('DeleteUserUseCase', () => {
       await expect(deleteUserUseCase.execute({ id: invalidId }))
         .rejects.toThrow('Invalid UUID format');
 
-      expect(mockUserRepository.delete).not.toHaveBeenCalled();
+      expect(mockUserRepository.findById).not.toHaveBeenCalled();
+      expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
   });
 });

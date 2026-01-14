@@ -9,7 +9,8 @@ export class User {
     private _name: string,
     private _hashedPassword: string,
     private readonly _createdAt: Date,
-    private _updatedAt: Date
+    private _updatedAt: Date,
+    private _deletedAt: Date | null = null
   ) {
     this.validateName(_name);
   }
@@ -20,7 +21,7 @@ export class User {
     const hashedPassword = await password.hash();
     const now = new Date();
 
-    return new User(id, email, trimmedName, hashedPassword, now, now);
+    return new User(id, email, trimmedName, hashedPassword, now, now, null);
   }
 
   static reconstitute(
@@ -29,9 +30,10 @@ export class User {
     name: string,
     hashedPassword: string,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
+    deletedAt: Date | null = null
   ): User {
-    return new User(id, email, name.trim(), hashedPassword, createdAt, updatedAt);
+    return new User(id, email, name.trim(), hashedPassword, createdAt, updatedAt, deletedAt);
   }
 
   private validateName(name: string): void {
@@ -56,6 +58,15 @@ export class User {
   async updatePassword(password: Password): Promise<void> {
     this._hashedPassword = await password.hash();
     this._updatedAt = new Date();
+  }
+
+  softDelete(): void {
+    this._deletedAt = new Date();
+    this._updatedAt = new Date();
+  }
+
+  isDeleted(): boolean {
+    return this._deletedAt !== null;
   }
 
   equals(other: User): boolean {
@@ -87,5 +98,9 @@ export class User {
 
   get updatedAt(): Date {
     return this._updatedAt;
+  }
+
+  get deletedAt(): Date | null {
+    return this._deletedAt;
   }
 }

@@ -10,10 +10,12 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findById(id: UserId): Promise<User | null> {
     const prismaUser = await this.prisma.user.findUnique({
-      where: { id: id.toString() },
+      where: {
+        id: id.toString(),
+      },
     });
 
-    if (!prismaUser) {
+    if (!prismaUser || prismaUser.deletedAt !== null) {
       return null;
     }
 
@@ -21,8 +23,11 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async findByEmail(email: Email): Promise<User | null> {
-    const prismaUser = await this.prisma.user.findUnique({
-      where: { email: email.value },
+    const prismaUser = await this.prisma.user.findFirst({
+      where: {
+        email: email.value,
+        deletedAt: null,
+      },
     });
 
     if (!prismaUser) {
@@ -34,6 +39,9 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findAll(): Promise<User[]> {
     const prismaUsers = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -50,6 +58,7 @@ export class PrismaUserRepository implements IUserRepository {
         name: prismaData.name,
         password: prismaData.password,
         updatedAt: prismaData.updatedAt,
+        deletedAt: prismaData.deletedAt,
       },
       create: prismaData,
     });
@@ -59,8 +68,12 @@ export class PrismaUserRepository implements IUserRepository {
 
   async delete(id: UserId): Promise<boolean> {
     try {
-      await this.prisma.user.delete({
+      await this.prisma.user.update({
         where: { id: id.toString() },
+        data: {
+          deletedAt: new Date(),
+          updatedAt: new Date(),
+        },
       });
       return true;
     } catch (error) {
@@ -70,7 +83,10 @@ export class PrismaUserRepository implements IUserRepository {
 
   async existsByEmail(email: Email): Promise<boolean> {
     const count = await this.prisma.user.count({
-      where: { email: email.value },
+      where: {
+        email: email.value,
+        deletedAt: null,
+      },
     });
 
     return count > 0;

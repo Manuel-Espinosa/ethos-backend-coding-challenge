@@ -21,6 +21,7 @@ model User {
   password  String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
   projects  Project[]
 
   @@map("users")

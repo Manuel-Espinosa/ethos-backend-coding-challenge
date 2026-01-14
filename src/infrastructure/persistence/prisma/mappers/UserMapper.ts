@@ -11,7 +11,8 @@ export class UserMapper {
       prismaUser.name,
       prismaUser.password,
       prismaUser.createdAt,
-      prismaUser.updatedAt
+      prismaUser.updatedAt,
+      prismaUser.deletedAt
     );
   }
 
@@ -22,6 +23,7 @@ export class UserMapper {
     password: string;
     createdAt: Date;
     updatedAt: Date;
+    deletedAt: Date | null;
   } {
     return {
       id: user.id.toString(),
@@ -30,6 +32,7 @@ export class UserMapper {
       password: user.hashedPassword,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      deletedAt: user.deletedAt,
     };
   }
 }
