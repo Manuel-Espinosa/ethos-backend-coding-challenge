@@ -27,6 +27,7 @@ export class Password {
   }
 
   static async compare(plainPassword: string, hashedPassword: string): Promise<boolean> {
+    console.log(plainPassword, hashedPassword, await bcrypt.compare(plainPassword, hashedPassword));
     return bcrypt.compare(plainPassword, hashedPassword);
   }
 
