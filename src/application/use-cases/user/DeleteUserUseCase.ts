@@ -8,9 +8,12 @@ export class DeleteUserUseCase {
   async execute(request: { id: string }): Promise<void> {
     const userId = UserId.create(request.id);
 
-    const deleted = await this.userRepository.delete(userId);
-    if (!deleted) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
       throw new UserNotFoundError();
     }
+
+    user.softDelete();
+    await this.userRepository.save(user);
   }
 }
