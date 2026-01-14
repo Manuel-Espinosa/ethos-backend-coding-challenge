@@ -4,6 +4,7 @@ import { GetUserUseCase } from '../../../application/use-cases/user/GetUserUseCa
 import { GetAllUsersUseCase } from '../../../application/use-cases/user/GetAllUsersUseCase';
 import { UpdateUserUseCase } from '../../../application/use-cases/user/UpdateUserUseCase';
 import { DeleteUserUseCase } from '../../../application/use-cases/user/DeleteUserUseCase';
+import { AuthenticatedRequest } from '../middleware/AuthMiddleware';
 
 export class UserController {
   constructor(
@@ -64,7 +65,11 @@ export class UserController {
   delete() {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        await this.deleteUserUseCase.execute({ id: req.params.id });
+        const authReq = req as AuthenticatedRequest;
+        await this.deleteUserUseCase.execute({
+          id: req.params.id,
+          authenticatedUserId: authReq.user!.userId,
+        });
         res.status(204).send();
       } catch (error) {
         next(error);
