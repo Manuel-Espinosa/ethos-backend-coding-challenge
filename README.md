@@ -1,102 +1,142 @@
-# Ethos PBS - Reto Técnico: API para backoffice
+# Documentacion Tecnica
 
-  
+## Arquitectura
 
-## 🎯 Objetivo
+El proyecto implementa **Arquitectura Hexagonal (Ports & Adapters)** con principios de clean architecture.
 
-Construir un MVP de una API para backoffice aplicando mejores prácticas de desarrollo y una arquitectura limpia.
+```
+src/
+├── domain/           # Logica de negocio pura (sin dependencias externas)
+├── application/      # Casos de uso y puertos
+├── infrastructure/   # Implementaciones concretas (DB, JWT, Rate Limiter)
+├── presentation/     # Capa HTTP (controllers, routes, middleware)
+└── dependency-injection/  # Contenedor de inyeccion de dependencias
+```
 
-  
+### Flujo de Dependencias
 
-## 🚀 Stack Tecnológico & Opciones
+```
+Presentation -> Application -> Domain
+                    ^
+Infrastructure ─────┘
+```
 
-  
+- **Domain**: Cero dependencias externas
+- **Application**: Define interfaces (ports) para servicios externos
+- **Infrastructure**: Implementa los ports definidos en Application
+- **Presentation**: Orquesta casos de uso
 
-**Backend (Elige uno):**
+## Modelo de Datos
 
-- Opción A: Node.js con Elysia (Recomendado)
+### User
+| Campo     | Tipo      | Descripcion                    |
+|-----------|-----------|--------------------------------|
+| id        | UUID      | Identificador unico            |
+| email     | String    | Email unico del usuario        |
+| name      | String    | Nombre del usuario             |
+| password  | String    | Hash bcrypt de la contrasena   |
+| createdAt | DateTime  | Fecha de creacion              |
+| updatedAt | DateTime  | Ultima actualizacion           |
+| deletedAt | DateTime? | Soft delete (nullable)         |
 
-- Opción B: Python con FastAPI
+### Project
+| Campo       | Tipo     | Descripcion                  |
+|-------------|----------|------------------------------|
+| id          | UUID     | Identificador unico          |
+| name        | String   | Nombre del proyecto          |
+| description | String?  | Descripcion (opcional)       |
+| userId      | UUID     | FK al usuario propietario    |
+| createdAt   | DateTime | Fecha de creacion            |
+| updatedAt   | DateTime | Ultima actualizacion         |
 
--  **Requisito No Negociable:** Arquitectura Hexagonal (Ports & Adapters).
+Relacion: User 1:N Project (cascade delete)
 
-  
+## Autenticacion
 
-**Base de Datos (Elige uno):**
+Flujo JWT:
 
-- Opción A: Supabase (PostgreSQL) (Recomendado)
+1. Usuario envia credenciales a `/api/auth/login`
+2. `LoginUseCase` valida credenciales con bcrypt
+3. `JWTTokenService` genera token firmado
+4. Cliente incluye token en header: `Authorization: Bearer <token>`
+5. `AuthMiddleware` valida y decodifica el token
+6. Usuario autenticado disponible en `req.user`
 
-- Opción B: MongoDB Local
+## Rate Limiter
 
-  
+Implementacion custom en memoria usando algoritmo de **sliding window**.
 
-## 📋 Alcance del Entregable (MVP)
+### Configuracion
+- `RATE_LIMIT_WINDOW_MS`: Ventana de tiempo (default: 900000ms = 15min)
+- `RATE_LIMIT_MAX_REQUESTS`: Maximo de requests por ventana (default: 100)
 
-  
+### Funcionamiento
+1. Almacena timestamps de requests por identificador (IP/userId)
+2. Filtra timestamps fuera de la ventana actual
+3. Permite request si `count < maxRequests`
+4. Limpieza automatica cada 60 segundos para prevenir memory leaks
 
-1.  **Backend con Arquitectura Hexagonal:**
+### Headers de Respuesta
+- `X-RateLimit-Remaining`: Requests restantes
+- `X-RateLimit-Reset`: Timestamp de reset
+- HTTP 429 cuando se excede el limite
 
-- Debe tener al menos dos entidades claras (ej. User y Project)
+## API Endpoints
 
-- Debe exponer un endpoint para autenticación
+### Publicos
+| Metodo | Ruta                | Descripcion          |
+|--------|---------------------|----------------------|
+| POST   | /api/auth/register  | Registro de usuario  |
+| POST   | /api/auth/login     | Login (retorna JWT)  |
 
-- Debe de contar con rutas protegidas
+### Protegidos (requieren JWT)
+| Metodo | Ruta              | Descripcion            |
+|--------|-------------------|------------------------|
+| GET    | /api/users        | Listar usuarios        |
+| GET    | /api/users/:id    | Obtener usuario por ID |
+| POST   | /api/users        | Crear usuario          |
+| PUT    | /api/users/:id    | Actualizar usuario     |
+| DELETE | /api/users/:id    | Eliminar usuario       |
+| GET    | /api/projects     | Listar proyectos       |
+| GET    | /api/projects/:id | Obtener proyecto       |
+| POST   | /api/projects     | Crear proyecto         |
+| PUT    | /api/projects/:id | Actualizar proyecto    |
+| DELETE | /api/projects/:id | Eliminar proyecto      |
 
-- Implementación de un rate limiter
+## Patrones de Diseno
 
-	- Implementar un middleware de Rate Limiter sin utilizar ningún paquete o tecnología externa dedicada a rate limiting. Solo se permiten las herramientas básicas del lenguaje.
+### Repository Pattern
+Interfaces en `domain/repositories/`, implementaciones en `infrastructure/persistence/`.
 
-		**Requisitos Funcionales**
+### Use Case Pattern
+Cada operacion de negocio encapsulada en una clase dedicada:
+- `CreateUserUseCase`, `LoginUseCase`, `CreateProjectUseCase`, etc.
 
-	1.  **Almacenamiento en Memoria**
+### Value Objects
+Conceptos de dominio modelados con validacion:
+- `Email`: Validacion de formato
+- `Password`: Requisitos de seguridad
+- `UserId`, `ProjectId`: Identificadores tipados
 
-		- Debe mantener un registro de las peticiones por IP o por usuario autenticado
+### DTO Pattern
+Objetos de transferencia para desacoplar contratos de API del dominio:
+- Request DTOs: Validados con Zod
+- Response DTOs: Formato de respuesta estandarizado
 
-		- Utilizar estructuras de datos nativas (objetos, Maps, etc.)
+### Dependency Injection
+`Container` singleton que instancia y conecta dependencias:
+```typescript
+Container.getInstance().getUserController()
+```
 
-	2.  **Configuración del Límite**
+## Stack Tecnologico
 
-		El Rate Limiter debe permitir configurar:
-
-		- Ventana de tiempo: Por ejemplo, 60 segundos, 15 minutos, 1 hora
-
-		- Número máximo de peticiones: Por ejemplo, 100 peticiones por ventana
-
-- Debe exponer endpoints de la API para el CRUD, por ejemplo, GET /api/users y GET /api/projects
-
-- La lógica de negocio debe estar en el "dominio"
-
-2.  **Conexión a Base de Datos:** La app debe estar conectada a la base de datos elegida, con al menos una tabla/colección creada y un ejemplo de lectura/escritura real
-
-  
-
-## ⚙️ Proceso de Desarrollo y Entrega
-
-  
-
-1.  **Fork** este repositorio
-
-2.  **Desarrolla por Módulos:** Utiliza una estrategia de branches para organizar tu trabajo (ej. feat/login, feat/projects-table)
-
-3.  **Pull Requests (PRs):** Abre Pull Requests en tu propio fork para integrar las features a tu rama principal. Esto nos permitirá evaluar tu proceso de desarrollo y forma de organizar el trabajo
-
-4.  **Plazo de Entrega:**  **Miércoles a las 18:00 hrs** (5 días naturales a partir de hoy). Al finalizar, asegúrate de que el código final esté en la rama main de tu fork y compártenos el link
-
-  
-
-## 📊 Criterios de Evaluación
-
-| Categoría | Descripción |
-|-----------|-------------|
-| **Cumplimiento Funcional** | El proyecto cumple con todas las pantallas y funcionalidades listadas en el alcance |
-| **Arquitectura y Código Limpio** | Implementación correcta de la Arquitectura Hexagonal. Código bien estructurado, legible y con separación de responsabilidades |
-| **Proceso de Desarrollo (Git)** | Uso de branches, commits atomicos y descriptivos y Pull Requests bien documentados. Entre más modularizado el desarrollo, mejor evaluación |
-| **Stack Tecnológico (Bonus)** | Uso de Supabase y Elysia será considerado como valor agregado |
-| **Extra Points** | Funcionalidad extra, documentación excepcional, tests, etc. |
-
-  
-  
-
----
-
-Te deseamos el mejor éxito en este reto.
+- **Runtime**: Node.js
+- **Framework**: Express
+- **Lenguaje**: TypeScript
+- **ORM**: Prisma
+- **Base de datos**: PostgreSQL
+- **Autenticacion**: JWT (jsonwebtoken)
+- **Hashing**: bcrypt
+- **Validacion**: Zod
+- **Testing**: Jest
